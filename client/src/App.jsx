@@ -7,7 +7,11 @@ const api = axios.create({
 });
 
 const jikanAPI = axios.create({
-  baseURL: 'https://api.jikan.moe/v4'
+  baseURL: 'https://api.jikan.moe/v4',
+  timeout: 10000, // 10 second timeout
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 const statusLabels = {
@@ -150,9 +154,14 @@ function App() {
       const encodedQuery = encodeURIComponent(trimmedQuery);
       let url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=15&order_by=relevance&sort=desc`;
       
-      // For short queries, try exact title match first
-      if (trimmedQuery.length < 10) {
-        url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=10&order_by=mal_id&sort=asc`;
+      // For very short queries (2-3 chars), try different search terms
+      if (trimmedQuery.length <= 3) {
+        // Try common variations for short queries
+        if (trimmedQuery.toLowerCase() === 're') {
+          url = `https://api.jikan.moe/v4/anime?q=re%3A&limit=15&order_by=relevance&sort=desc`;
+        } else {
+          url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=15&order_by=relevance&sort=desc`;
+        }
       }
       console.log('URL:', url);
       
@@ -163,17 +172,24 @@ function App() {
       
       // Prioritize exact and partial title matches
       if (results.length > 0) {
+        // Special handling for "re zero" to find Re:Zero
+        let targetQuery = trimmedQuery.toLowerCase();
+        if (trimmedQuery.toLowerCase() === 're zero') {
+          targetQuery = 're:zero';
+        }
+        
         const exactMatch = results.find(anime => 
-          anime.title.toLowerCase() === trimmedQuery.toLowerCase()
+          anime.title.toLowerCase() === targetQuery ||
+          anime.title.toLowerCase().includes(targetQuery)
         );
         
         const partialMatches = results.filter(anime => 
-          anime.title.toLowerCase().includes(trimmedQuery.toLowerCase()) &&
-          anime.title.toLowerCase() !== trimmedQuery.toLowerCase()
+          anime.title.toLowerCase().includes(targetQuery) &&
+          anime.title.toLowerCase() !== targetQuery
         );
         
         const otherMatches = results.filter(anime => 
-          !anime.title.toLowerCase().includes(trimmedQuery.toLowerCase())
+          !anime.title.toLowerCase().includes(targetQuery)
         );
         
         // Reorder results: exact matches first, then partial matches, then others
