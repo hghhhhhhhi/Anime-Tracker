@@ -1,5 +1,5 @@
 // Vercel serverless function for anime API
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   // Handle different HTTP methods
   switch (req.method) {
     case 'GET':
