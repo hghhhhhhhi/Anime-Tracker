@@ -154,9 +154,11 @@ function App() {
       const encodedQuery = encodeURIComponent(trimmedQuery);
       let url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=15&order_by=relevance&sort=desc`;
       
-      // For very short queries (2-3 chars), try different search terms
-      if (trimmedQuery.length <= 3) {
-        // Try common variations for short queries
+      // Special handling for specific anime titles
+      if (trimmedQuery.toLowerCase() === 're zero') {
+        url = `https://api.jikan.moe/v4/anime?q=re%3Azero&limit=15&order_by=relevance&sort=desc`;
+      } else if (trimmedQuery.length <= 3) {
+        // For very short queries (2-3 chars), try different search terms
         if (trimmedQuery.toLowerCase() === 're') {
           url = `https://api.jikan.moe/v4/anime?q=re%3A&limit=15&order_by=relevance&sort=desc`;
         } else {
