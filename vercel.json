@@ -7,6 +7,14 @@
       "config": {
         "distDir": "dist"
       }
+    },
+    {
+      "src": "api/anime.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/stats.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
