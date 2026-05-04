@@ -156,21 +156,30 @@ function App() {
       
       // Special handling for specific anime titles
       if (trimmedQuery.toLowerCase() === 're zero') {
-        url = `https://api.jikan.moe/v4/anime?q=re%3Azero&limit=15&order_by=relevance&sort=desc`;
-      } else if (trimmedQuery.length <= 3) {
-        // For very short queries (2-3 chars), try different search terms
-        if (trimmedQuery.toLowerCase() === 're') {
-          url = `https://api.jikan.moe/v4/anime?q=re%3A&limit=15&order_by=relevance&sort=desc`;
-        } else {
-          url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=15&order_by=relevance&sort=desc`;
-        }
+        url = `https://api.jikan.moe/v4/anime?q=re:zero&limit=15&order_by=relevance&sort=desc`;
+      } else if (trimmedQuery.toLowerCase() === 're') {
+        url = `https://api.jikan.moe/v4/anime?q=re:&limit=15&order_by=relevance&sort=desc`;
+      } else {
+        url = `https://api.jikan.moe/v4/anime?q=${encodedQuery}&limit=15&order_by=relevance&sort=desc`;
       }
       console.log('URL:', url);
       
       const response = await fetch(url);
       const data = await response.json();
       console.log('API Response:', data);
-      let results = data.data || [];
+      
+      // Handle API errors
+      if (data.status === 400 || data.error) {
+        console.log('API Error, trying fallback search...');
+        // Fallback: try a simpler search without special characters
+        const fallbackUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(trimmedQuery)}&limit=15`;
+        const fallbackResponse = await fetch(fallbackUrl);
+        const fallbackData = await fallbackResponse.json();
+        console.log('Fallback API Response:', fallbackData);
+        var results = fallbackData.data || [];
+      } else {
+        var results = data.data || [];
+      }
       
       // Prioritize exact and partial title matches
       if (results.length > 0) {
