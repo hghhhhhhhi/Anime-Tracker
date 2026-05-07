@@ -15,6 +15,10 @@
     {
       "src": "api/stats.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/image-proxy.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -25,6 +29,10 @@
     {
       "src": "/api/stats",
       "dest": "/api/stats.js"
+    },
+    {
+      "src": "/api/image-proxy",
+      "dest": "/api/image-proxy.js"
     },
     {
       "src": "/(.*)",

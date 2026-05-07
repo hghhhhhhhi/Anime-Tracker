@@ -1,5 +1,16 @@
 // Vercel serverless function for anime API
 module.exports = function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  
   // Handle different HTTP methods
   switch (req.method) {
     case 'GET':
@@ -83,10 +94,18 @@ function handlePost(req, res) {
 }
 
 function handlePut(req, res) {
-  const { id } = req.query;
+  // Handle both path parameter and query parameter for compatibility
+  let id = req.query.id;
+  
+  // Extract ID from URL path if not in query (e.g., /api/anime/2)
+  if (!id && req.url) {
+    const urlParts = req.url.split('/');
+    id = urlParts[urlParts.length - 1];
+  }
+  
   const { title, description, episodes_total, episodes_watched, status, rating, genre, year, image_url } = req.body;
   
-  if (!id) {
+  if (!id || id === 'anime') {
     return res.status(400).json({ error: 'ID is required' });
   }
 
@@ -114,15 +133,26 @@ function handlePut(req, res) {
 }
 
 function handleDelete(req, res) {
-  const { id } = req.query;
+  // Handle both path parameter and query parameter for compatibility
+  let id = req.query.id;
   
-  if (!id) {
+  // Extract ID from URL path if not in query (e.g., /api/anime/2)
+  if (!id && req.url) {
+    const urlParts = req.url.split('/');
+    id = urlParts[urlParts.length - 1];
+  }
+  
+  if (!id || id === 'anime') {
     return res.status(400).json({ error: 'ID is required' });
   }
 
+  // Debug logging
+  console.log('DELETE request - ID:', id, 'Type:', typeof id);
+  console.log('Current mockAnime:', mockAnime.map(a => ({ id: a.id, title: a.title })));
+
   const animeIndex = mockAnime.findIndex(anime => anime.id == id);
   if (animeIndex === -1) {
-    return res.status(404).json({ error: 'Anime not found' });
+    return res.status(404).json({ error: 'Anime not found', id: id, availableIds: mockAnime.map(a => a.id) });
   }
 
   // Actually remove the anime from the array

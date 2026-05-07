@@ -6,6 +6,16 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api'
 });
 
+// Function to proxy image URLs to avoid CORS issues
+const getProxiedImageUrl = (imageUrl) => {
+  if (!imageUrl) return '';
+  // Only proxy external images that might have CORS issues
+  if (imageUrl.includes('myanimelist.net') || imageUrl.includes('cdn.myanimelist.net')) {
+    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+  }
+  return imageUrl;
+};
+
 const jikanAPI = axios.create({
   baseURL: 'https://api.jikan.moe/v4',
   timeout: 10000, // 10 second timeout
@@ -372,9 +382,11 @@ function App() {
               {searchResults.map((item) => (
                 <div key={item.mal_id} className="search-result-card">
                   <img
-                    src={item.images?.jpg?.large_image_url || ''}
+                    src={getProxiedImageUrl(item.images?.jpg?.large_image_url || '')}
                     alt={item.title}
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                   />
+                  <div className="placeholder-image" style={{display: 'none'}}>No image</div>
                   <div className="result-content">
                     <h4>{item.title}</h4>
                     <p className="result-meta">
@@ -498,7 +510,8 @@ function App() {
           filteredAnime.map((entry) => (
             <article key={entry.id} className="anime-card">
               <div className="anime-card-image">
-                {entry.image_url ? <img src={entry.image_url} alt={entry.title} /> : <div className="placeholder-image">No image</div>}
+                {entry.image_url ? <img src={getProxiedImageUrl(entry.image_url)} alt={entry.title} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} /> : <div className="placeholder-image">No image</div>}
+                <div className="placeholder-image" style={{display: 'none'}}>No image</div>
               </div>
               <div className="anime-card-body">
                 <div className="anime-card-header">
