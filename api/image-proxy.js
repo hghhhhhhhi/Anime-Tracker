@@ -1,4 +1,8 @@
 // Image proxy to handle CORS issues with external images
+const https = require('https');
+const http = require('http');
+const url = require('url');
+
 module.exports = function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,19 +20,20 @@ module.exports = function handler(req, res) {
     return;
   }
   
-  const { url } = req.query;
+  const imageUrl = req.query.url;
   
-  if (!url) {
+  if (!imageUrl) {
     res.status(400).json({ error: 'URL parameter is required' });
     return;
   }
   
   // Validate URL
+  let parsedUrl;
   try {
-    const urlObj = new URL(url);
+    parsedUrl = new URL(imageUrl);
     // Only allow image URLs from known safe domains
     const allowedDomains = ['cdn.myanimelist.net', 'api.jikan.moe', 'myanimelist.net'];
-    if (!allowedDomains.includes(urlObj.hostname)) {
+    if (!allowedDomains.includes(parsedUrl.hostname)) {
       res.status(400).json({ error: 'Domain not allowed' });
       return;
     }
@@ -37,24 +42,35 @@ module.exports = function handler(req, res) {
     return;
   }
   
-  // Fetch the image
-  fetch(url)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      
-      // Set appropriate headers
-      res.setHeader('Content-Type', response.headers.get('Content-Type') || 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
-      
-      return response.arrayBuffer();
-    })
-    .then(buffer => {
-      res.status(200).send(Buffer.from(buffer));
-    })
-    .catch(error => {
-      console.error('Image proxy error:', error);
-      res.status(500).json({ error: 'Failed to proxy image' });
-    });
+  // Choose the right protocol module
+  const protocol = parsedUrl.protocol === 'https:' ? https : http;
+  
+  const request = protocol.get(imageUrl, (response) => {
+    // Set appropriate headers
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+    
+    // Handle redirects
+    if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+      return res.redirect(response.statusCode, response.headers.location);
+    }
+    
+    // Handle errors
+    if (response.statusCode >= 400) {
+      return res.status(response.statusCode).json({ error: `Failed to fetch image: ${response.statusCode}` });
+    }
+    
+    // Stream the response
+    response.pipe(res);
+  });
+  
+  request.on('error', (error) => {
+    console.error('Image proxy error:', error);
+    res.status(500).json({ error: 'Failed to proxy image' });
+  });
+  
+  request.setTimeout(10000, () => {
+    request.destroy();
+    res.status(408).json({ error: 'Request timeout' });
+  });
 };

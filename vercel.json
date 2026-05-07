@@ -23,7 +23,7 @@
   ],
   "routes": [
     {
-      "src": "/api/anime",
+      "src": "/api/anime(/.*)?",
       "dest": "/api/anime.js"
     },
     {
