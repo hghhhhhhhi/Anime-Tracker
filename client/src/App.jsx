@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, Edit, RefreshCcw, Search, X } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api'
@@ -287,7 +288,9 @@ function App() {
   }, [anime]);
 
   return (
-    <div className="app-shell">
+    <>
+      <Analytics />
+      <div className="app-shell">
       <header className="topbar">
         <div>
           <p className="eyebrow">Anime Tracker</p>
@@ -544,6 +547,7 @@ function App() {
         Open this app in a browser on both Android and PC. The backend stores your list so changes stay synced.
       </footer>
     </div>
+    </>
   );
 }
 
